@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://locahost:5173")
-public class ProductController {
+@CrossOrigin(origins = "http://localhost:5173")
+public class TrendingProductController {
 
     @GetMapping("/api/products")
     public List<Product> getProducts() {
@@ -20,15 +20,23 @@ public class ProductController {
                         "Kamal Dairy Full Cream Milk 1L",
                         62,
                         "milk",
-                        "/images/milk/kamal_fullcream_1l.jpg"
+                        "/images/milk/Kamal Dairy Full Cream Milk 1L.jpg"
                 ),
                 new Product(
                         2,
                         "Kamal Dairy Fresh Paneer 200g",
                         85,
                         "paneer",
-                        "/images/paneer/kamal_fresh_200g.jpg"
-                )
+                        "/images/paneer/Kamal Dairy Fresh Paneer 200g.jpg"
+                ),
+                new Product(
+                        3,
+                        "Kamal Dairy Salted Butter 100g",
+                        52,
+                        "butter",
+                        "/images/butter/Kamal Dairy Salted Butter 100g.jpg"
+
+        )
         );
     }
 }
