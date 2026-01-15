@@ -36,7 +36,51 @@ public class ProductController {
                         85,
                         "paneer",
                         "/images/paneer/Kamal Dairy Fresh Paneer 200g.jpg"
-                )
+                ),
+        new Product(
+                4,
+                "DailyFresh Toned Milk 500ml",
+                30,
+                "milk",
+                "/images/milk/DailyFresh Toned Milk 500ml.jpg"
+        ),
+                new Product(
+                        5,
+                        "FreshFarm Cow Milk 1L",
+                        58,
+                        "milk",
+                        "/images/milk/FreshFarm Cow Milk 1L.jpg"
+                ),
+                new Product(
+                        6,
+                        "HealthyCow Organic Milk 1L",
+                        70,
+                        "milk",
+                        "/images/milk/HealthyCow Organic Milk 1L.jpg"
+                ),
+                new Product(
+                        7,
+                        "CreamLand Skimmed Milk 1L",
+                        55,
+                        "milk",
+                        "/images/milk/CreamLand Skimmed Milk 1L.jpg"
+                ),
+                new Product(
+                        8,
+                        "PureGold Buffalo Milk 1L",
+                        68,
+                        "milk",
+                        "/images/milk/PureGold Buffalo Milk 1L.jpg"
+                ),
+        new Product(
+                9,
+                "MilkyWay Low Fat Milk 500ml",
+                28,
+                "milk",
+                "/images/milk/MilkyWay Low Fat Milk 500ml.jpg"
+        )
+
+
         );
 
         // ✅ FILTER BASED ON CATEGORY FROM URL
