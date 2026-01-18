@@ -78,8 +78,92 @@ public class ProductController {
                 28,
                 "milk",
                 "/images/milk/MilkyWay Low Fat Milk 500ml.jpg"
-        )
 
+        ),
+                new Product(
+                        10,
+                        "FreshFarm Double Toned Milk 1L",
+                        52,
+                        "milk",
+                        "/images/milk/FreshFarm Double Toned Milk 1L.jpg"
+                ),
+                new Product(
+                        11,
+                        "HealthyCow Protein Rich Milk 1L",
+                        75,
+                        "milk",
+                        "/images/milk/HealthyCow Protein Rich Milk 1L.jpg"
+                ),
+                new Product(
+                        12,
+                        "CreamLand Farm Fresh Milk 500ml",
+                        32,
+                        "milk",
+                        "/images/milk/CreamLand Farm Fresh Milk 500ml.jpg"
+                ),
+                new Product(
+                        13,
+                        "PureGold Gold Milk 1L",
+                        65,
+                        "milk",
+                        "/images/milk/PureGold Gold Milk 1L.jpg"
+                ),
+                new Product(
+                        13,
+                        "Kamal Dairy A2 Cow Milk 1L",
+                        90,
+                        "milk",
+                        "/images/milk/Kamal Dairy A2 Cow Milk 1L.jpg"
+                ),
+                new Product(
+                        14,
+                        "MilkyWay Standard Milk 1L",
+                        60,
+                        "milk",
+                        "/images/milk/MilkyWay Standard Milk 1L.jpg"
+                ),
+                new Product(
+                        15,
+                        "DailyFresh Pasteurized Milk 500ml",
+                        29,
+                        "milk",
+                        "/images/milk/DailyFresh Pasteurized Milk 500ml.jpg"
+                ),
+                new Product(
+                        16,
+                        "HealthyCow High Calcium Milk 1L",
+                        72,
+                        "milk",
+                        "/images/milk/HealthyCow High Calcium Milk 1L.jpg"
+                ),
+                new Product(
+                        17,
+                        "FreshFarm Jersey Cow Milk 1L",
+                        67,
+                        "milk",
+                        "/images/milk/FreshFarm Jersey Cow Milk 1L.jpg"
+                ),
+                new Product(
+                        18,
+                        "PureGold Premium Milk 500ml",
+                        35,
+                        "milk",
+                        "/images/milk/PureGold Premium Milk 500ml.jpg"
+                ),
+                new Product(
+                        19,
+                        "CreamLand Ultra-Filtered Milk 1L",
+                        78,
+                        "milk",
+                        "/images/milk/CreamLand Ultra-Filtered Milk 1L.jpg"
+                ),
+                new Product(
+                        20,
+                        "DailyFresh Vitamin Milk 1L",
+                        69,
+                        "milk",
+                        "/images/milk/DailyFresh Vitamin Milk 1L.jpg"
+                )
 
         );
 
