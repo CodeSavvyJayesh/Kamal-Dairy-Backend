@@ -54,7 +54,9 @@ public class Product{
     private String name;
     private double price;
     private String category;
+    @Column(name= "image_url")
     private String imageUrl;
+    private boolean isTrending;
 
     // required by JPA
     public Product(){
@@ -88,7 +90,7 @@ public class Product{
         return imageUrl;
     }
 
-    public void setID(int id)
+    public void setID(Integer id)
     {
          this.id = id;
     }

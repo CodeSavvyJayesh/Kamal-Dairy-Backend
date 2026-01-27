@@ -1,4 +1,4 @@
-package com.kamaldairy.kamal_dairy_backend.service;
+/*package com.kamaldairy.kamal_dairy_backend.service;
 
 import com.kamaldairy.kamal_dairy_backend.model.Product;
 import org.springframework.stereotype.Service;
@@ -165,4 +165,33 @@ public class ProductService {
                            p.getCategory().equalsIgnoreCase(category))
                    .toList();
        }
+} */
+
+package com.kamaldairy.kamal_dairy_backend.service;
+
+import com.kamaldairy.kamal_dairy_backend.model.Product;
+import com.kamaldairy.kamal_dairy_backend.repository.ProductRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class ProductService {
+
+    private final ProductRepository productRepository;
+
+    // 🔹 Constructor Injection
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+
+    // 🔹 Get all products
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
+    // 🔹 Get products by category
+    public List<Product> getProductsByCategory(String category) {
+        return productRepository.findByCategory(category);
+    }
 }

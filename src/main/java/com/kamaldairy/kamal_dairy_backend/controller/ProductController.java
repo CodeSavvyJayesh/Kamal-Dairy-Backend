@@ -7,19 +7,25 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/products")
+@CrossOrigin(origins = "http://localhost:5173")
 public class ProductController {
 
-     private final ProductService productService;
+    private final ProductService productService;
 
-     public ProductController(ProductService productService) {
-          this.productService = productService;
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
 
-     }
-     @GetMapping("/{category}")
-     public List<Product> getProductByCategory(@PathVariable String category)
-     {
-          return productService.getProductsByCategory(category);
+    // 🔹 All products
+    @GetMapping
+    public List<Product> getAllProducts() {
+        return productService.getAllProducts();
+    }
+
+    // 🔹 Category-wise products
+    @GetMapping("/{category}")
+    public List<Product> getProductsByCategory(@PathVariable String category) {
+        return productService.getProductsByCategory(category);
     }
 }
