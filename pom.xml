@@ -6,6 +6,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Spring Boot Parent -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -13,16 +14,19 @@
         <relativePath/>
     </parent>
 
+    <!-- Project Info -->
     <groupId>com.kamaldairy</groupId>
     <artifactId>kamal-dairy-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>kamal-dairy-backend</name>
     <description>Backend for Kamal Dairy Project</description>
 
+    <!-- Java Version -->
     <properties>
         <java.version>21</java.version>
     </properties>
 
+    <!-- Dependencies -->
     <dependencies>
 
         <!-- 🌐 Spring Web (REST APIs) -->
@@ -31,16 +35,45 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- 🗄️ Spring Data JPA -->
+        <!-- 🔐 Spring Security (JWT, Auth) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- 🗄️ Spring Data JPA + Hibernate -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- 🐬 MySQL Driver -->
+        <!-- 🐬 MySQL JDBC Driver -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- 🔑 JWT API -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.11.5</version>
+        </dependency>
+
+        <!-- 🔑 JWT Implementation -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.11.5</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- 🔑 JWT Jackson (JSON handling) -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.11.5</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -53,6 +86,7 @@
 
     </dependencies>
 
+    <!-- Build -->
     <build>
         <plugins>
             <plugin>
