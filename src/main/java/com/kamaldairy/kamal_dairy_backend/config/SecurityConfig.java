@@ -9,20 +9,31 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
-    // we have to make password encoder (for hashing the password)
+
     @Bean
-    public PasswordEncoder passwordEncoder()
-    {
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // security rules basically who can access what, who will be blocked / who will be not blocked
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable()).authorizeHttpRequests
-                (auth -> auth.requestMatchers
-                                (",", "/error", "/api/products/**" , "/api/trending-products/**", "/api/auth/**").permitAll().anyRequest().authenticated()
+
+        http
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        // PUBLIC APIs
+                        .requestMatchers(
+                                "/error",
+                                "/api/auth/signup",
+                                "/api/auth/login",
+                                "/api/products/**",
+                                "/api/trending-products/**"
+                        ).permitAll()
+
+                        // EVERYTHING ELSE NEEDS TOKEN
+                        .anyRequest().authenticated()
                 );
+
         return http.build();
     }
 }

@@ -1,7 +1,9 @@
 package com.kamaldairy.kamal_dairy_backend.service;
+import com.kamaldairy.kamal_dairy_backend.dto.LoginRequest;
 import com.kamaldairy.kamal_dairy_backend.dto.SignupRequest;
 import com.kamaldairy.kamal_dairy_backend.model.User;
 import com.kamaldairy.kamal_dairy_backend.repository.UserRepository;
+import com.kamaldairy.kamal_dairy_backend.security.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 @Service
@@ -29,5 +31,15 @@ public class UserService {
         );
 
         return userRepository.save(user);
+    }
+
+    // login
+    public String login(LoginRequest request)
+    {
+        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new RuntimeException("User not found"));
+        if(!passwordEncoder.matches(request.getPassword(),user.getPassword())){
+            throw new RuntimeException("Invalid Password");
+        }
+        return JwtUtil.generateToken(user.getEmail());
     }
 }

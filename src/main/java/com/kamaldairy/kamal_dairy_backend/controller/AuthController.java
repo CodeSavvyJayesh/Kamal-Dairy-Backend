@@ -1,5 +1,7 @@
 package com.kamaldairy.kamal_dairy_backend.controller;
 
+import com.kamaldairy.kamal_dairy_backend.dto.LoginRequest;
+import com.kamaldairy.kamal_dairy_backend.dto.LoginResponse;
 import com.kamaldairy.kamal_dairy_backend.dto.SignupRequest;
 import com.kamaldairy.kamal_dairy_backend.model.User;
 import com.kamaldairy.kamal_dairy_backend.service.UserService;
@@ -22,6 +24,14 @@ public class AuthController {
         User user = userService.registerUser(request);
 
         return ResponseEntity.ok("user Registered Successfully");
+    }
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse>login(
+            @RequestBody LoginRequest request
+            )
+    {
+        String token = userService.login(request);
+        return ResponseEntity.ok(new LoginResponse(token));
     }
 
 }
