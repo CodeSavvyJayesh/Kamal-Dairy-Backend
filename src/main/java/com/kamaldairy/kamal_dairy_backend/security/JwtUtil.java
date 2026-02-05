@@ -1,5 +1,6 @@
 package com.kamaldairy.kamal_dairy_backend.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -16,5 +17,23 @@ public class JwtUtil {
     public static String generateToken(String email)
     {
         return Jwts.builder().setSubject(email).setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + 86400000)).signWith(KEY).compact();
+    }
+    // extract email from the token
+    public static String extractEmail(String token)
+    {
+        Claims claims = Jwts.parser().setSigningKey(SECRET_KEY).
+                parseClaimsJws(token).getBody();
+        return claims.getSubject();
+    }
+    // validate token expiry
+    public static boolean isTokenValid(String token)
+    {
+         try{
+             Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token);
+             return true;
+         }catch( Exception e)
+         {
+              return false;
+         }
     }
 }
