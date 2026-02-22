@@ -14,6 +14,7 @@ public class User {
     private String email;
     @Column(nullable = false)
     private String password;
+    public String role;
     // this is required by the JPA
     public User(){
 
@@ -51,6 +52,16 @@ public class User {
     public void setPassword(String password)
     {
         this.password=password;
+    }
+
+    // role getter / setter
+    public String getRole()
+    {
+        return role;
+    }
+    public void setRole(String role)
+    {
+        this.role = role;
     }
 
 

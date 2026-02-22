@@ -29,7 +29,7 @@ public class UserService {
         user.setPassword(
                 passwordEncoder.encode(request.getPassword())
         );
-
+        user.setRole("ROLE_USER");
         return userRepository.save(user);
     }
 
@@ -40,6 +40,6 @@ public class UserService {
         if(!passwordEncoder.matches(request.getPassword(),user.getPassword())){
             throw new RuntimeException("Invalid Password");
         }
-        return JwtUtil.generateToken(user.getEmail());
+        return JwtUtil.generateToken(user.getEmail(),user.getRole());
     }
 }
