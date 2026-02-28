@@ -18,20 +18,35 @@ public class AuthController {
     public AuthController(UserService userService) {
         this.userService = userService;
     }
+
+    // =========================
+    // SIGNUP API
+    // =========================
     @PostMapping("/signup")
-    public ResponseEntity<?>
-    signup(@RequestBody SignupRequest request ) {
+    public ResponseEntity<?> signup(@RequestBody SignupRequest request) {
+
         User user = userService.registerUser(request);
 
-        return ResponseEntity.ok("user Registered Successfully");
-    }
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse>login(
-            @RequestBody LoginRequest request
-            )
-    {
-        String token = userService.login(request);
-        return ResponseEntity.ok(new LoginResponse(token));
+        return ResponseEntity.ok("User Registered Successfully");
     }
 
+    // =========================
+    // LOGIN API
+    // =========================
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(
+            @RequestBody LoginRequest request
+    ) {
+
+        // Get user first (to extract role)
+        User user = userService.getUserByEmail(request.getEmail());
+
+        // Generate JWT token
+        String token = userService.login(request);
+
+        // Return token + role
+        return ResponseEntity.ok(
+                new LoginResponse(token, user.getRole())
+        );
+    }
 }
