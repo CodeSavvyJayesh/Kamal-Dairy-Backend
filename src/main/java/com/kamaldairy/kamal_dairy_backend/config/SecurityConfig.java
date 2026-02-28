@@ -15,19 +15,19 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    // 🔐 Password encoder
+    //  Password encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 🔐 JWT Filter (inject repository properly)
+    // JWT Filter (inject repository properly)
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(UserRepository userRepository) {
         return new JwtAuthenticationFilter(userRepository);
     }
 
-    // 🔐 Security rules
+    //  Security rules
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,

@@ -41,7 +41,6 @@ public class AuthController {
         // Get user first (to extract role)
         User user = userService.getUserByEmail(request.getEmail());
 
-        // Generate JWT token
         String token = userService.login(request);
 
         // Return token + role
