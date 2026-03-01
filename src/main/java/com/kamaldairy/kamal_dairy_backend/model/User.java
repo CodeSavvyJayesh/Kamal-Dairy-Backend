@@ -1,6 +1,9 @@
 package com.kamaldairy.kamal_dairy_backend.model;
 
 import jakarta.persistence.*;
+import org.springframework.cglib.core.Local;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -15,6 +18,10 @@ public class User {
     @Column(nullable = false)
     private String password;
     public String role;
+    private boolean enabled;
+    private String otp;
+    private LocalDateTime otpExpiry;
+
     // this is required by the JPA
     public User(){
 
@@ -64,5 +71,27 @@ public class User {
         this.role = role;
     }
 
+    public boolean isEnabled()
+    {
+        return enabled;
+    }
+    public void setEnabled(boolean enabled)
+    {
+        this.enabled = enabled;
+    }
+    public String getOtp(){
+        return otp;
+    }
+    public void setOtp(String otp){
+        this.otp = otp;
+    }
+
+    public LocalDateTime getOtpExpiry(){
+        return otpExpiry;
+    }
+    public void setOtpExpiry(LocalDateTime otpExpiry)
+    {
+        this.otpExpiry = otpExpiry;
+    }
 
 }
