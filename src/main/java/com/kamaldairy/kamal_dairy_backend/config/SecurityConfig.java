@@ -6,6 +6,8 @@ import com.kamaldairy.kamal_dairy_backend.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import org.springframework.http.HttpMethod;
+
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
@@ -31,7 +33,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // JWT Filter
+    // JWT filter
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(UserRepository userRepository) {
         return new JwtAuthenticationFilter(userRepository);
@@ -49,6 +51,7 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
         source.registerCorsConfiguration("/**", configuration);
 
         return source;
@@ -62,15 +65,18 @@ public class SecurityConfig {
     ) throws Exception {
 
         http
-                .cors(cors -> {}) // IMPORTANT: enable CORS
+                .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/products/**",
-                                "/api/trending-products/**"
-                        ).permitAll()
+
+                        // allow all api requests
+                        .requestMatchers("/api/**").permitAll()
+
+                        // allow preflight requests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // all other requests need authentication
                         .anyRequest().authenticated()
                 )
 
