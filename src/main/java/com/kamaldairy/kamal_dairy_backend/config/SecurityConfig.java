@@ -33,7 +33,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // JWT filter
+    // JWT Filter
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(UserRepository userRepository) {
         return new JwtAuthenticationFilter(userRepository);
@@ -70,13 +70,21 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // allow all api requests
-                        .requestMatchers("/api/**").permitAll()
+                        // PUBLIC APIs
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/products/**",
+                                "/api/trending-products/**"
+                        ).permitAll()
 
-                        // allow preflight requests
+                        // Allow CORS preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // all other requests need authentication
+                        // PROTECTED APIs
+                        .requestMatchers("/api/cart/**").authenticated()
+                        .requestMatchers("/api/orders/**").authenticated()
+
+                        // Everything else requires login
                         .anyRequest().authenticated()
                 )
 

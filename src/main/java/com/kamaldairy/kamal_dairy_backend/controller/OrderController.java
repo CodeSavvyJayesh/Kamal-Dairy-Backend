@@ -2,14 +2,13 @@ package com.kamaldairy.kamal_dairy_backend.controller;
 
 import com.kamaldairy.kamal_dairy_backend.model.Order;
 import com.kamaldairy.kamal_dairy_backend.service.OrderService;
-import org.springframework.web.bind.annotation.*;
-import java.security.Principal;
-import org.springframework.security.access.prepost.PreAuthorize;
 
-import java.util.List;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/orders")
+@CrossOrigin(origins = "http://localhost:5173")
 public class OrderController {
 
     private final OrderService orderService;
@@ -18,22 +17,11 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    // 🔥 Only USER can create order
-    @PreAuthorize("hasRole('USER')")
-    @PostMapping
-    public Order createOrder(
-            @RequestParam String productName,
-            @RequestParam double price,
-            Principal principal
-    ) {
-        String userEmail = principal.getName();
-        return orderService.createOrder(productName, price, userEmail);
-    }
+    @PostMapping("/place")
+    public Order placeOrder(Authentication authentication) {
 
-    // 🔥 Any authenticated user can view their own orders
-    @GetMapping
-    public List<Order> getMyOrders(Principal principal) {
-        String userEmail = principal.getName();
-        return orderService.getUserOrders(userEmail);
+        String userEmail = authentication.getName();
+
+        return orderService.placeOrder(userEmail);
     }
 }

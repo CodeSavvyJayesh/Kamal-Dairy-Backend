@@ -1,50 +1,50 @@
 package com.kamaldairy.kamal_dairy_backend.model;
 
 import jakarta.persistence.*;
+import java.util.List;
 
 @Entity
-@Table(name="orders")
+@Table(name = "orders")
 public class Order {
-    // this is Order Entity
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    private String productName;
-    private double price;
-    // v.imp as JWT gives us email we link order to that email
 
     private String userEmail;
-    public Order(){
-    }
-    public Order(String productName,double price, String userEmail)
-    {
-        this.productName = productName;
-        this.price = price;
-        this.userEmail = userEmail;
-    }
-    public Integer getId(){
+
+    private double totalAmount;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    private List<OrderItem> items;
+
+    public Order() {}
+
+    public Integer getId() {
         return id;
     }
-    public String getProductName(){
-        return productName;
-    }
-    public double getPrice(){
-        return price;
-    }
-    public String getUserEmail(){
+
+    public String getUserEmail() {
         return userEmail;
     }
-    public void setProductName(String productName)
-    {
-        this.productName = productName;
+
+    public double getTotalAmount() {
+        return totalAmount;
     }
-    public void setPrice(double price)
-    {
-        this.price = price;
+
+    public List<OrderItem> getItems() {
+        return items;
     }
-    public void setUserEmail(String userEmail)
-    {
+
+    public void setUserEmail(String userEmail) {
         this.userEmail = userEmail;
     }
 
+    public void setTotalAmount(double totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public void setItems(List<OrderItem> items) {
+        this.items = items;
+    }
 }
