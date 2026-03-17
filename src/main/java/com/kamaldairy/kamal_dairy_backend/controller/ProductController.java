@@ -31,14 +31,14 @@ public class ProductController {
     }
 
     // 🔐 ADMIN ONLY - Add product
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('USER')")
     @PostMapping
     public Product addProduct(@RequestBody Product product) {
         return productService.saveProduct(product);
     }
 
     // 🔐 ADMIN ONLY - Update product
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('USER')")
     @PutMapping("/{id}")
     public Product updateProduct(@PathVariable Integer id,
                                  @RequestBody Product updatedProduct) {
@@ -46,7 +46,7 @@ public class ProductController {
     }
 
     // 🔐 ADMIN ONLY - Delete product
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/{id}")
     public String deleteProduct(@PathVariable Integer id) {
         productService.deleteProduct(id);
