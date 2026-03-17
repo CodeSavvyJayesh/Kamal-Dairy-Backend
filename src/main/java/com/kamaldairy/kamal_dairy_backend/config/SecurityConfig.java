@@ -74,7 +74,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/products/**",
-                                "/api/trending-products/**"
+                                "/api/trending-products/**",
+                                "api/contact/**"
                         ).permitAll()
 
                         // Allow CORS preflight
@@ -83,6 +84,7 @@ public class SecurityConfig {
                         // PROTECTED APIs
                         .requestMatchers("/api/cart/**").authenticated()
                         .requestMatchers("/api/orders/**").authenticated()
+
 
                         // Everything else requires login
                         .anyRequest().authenticated()

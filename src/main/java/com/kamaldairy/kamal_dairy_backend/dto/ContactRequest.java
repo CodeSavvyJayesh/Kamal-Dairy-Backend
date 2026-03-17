@@ -37,7 +37,7 @@ public class ContactRequest {
     }
     public String getMessage()
     {
-        return getMessage();
+        return message;
     }
     public void setMessage(String message)
     {
