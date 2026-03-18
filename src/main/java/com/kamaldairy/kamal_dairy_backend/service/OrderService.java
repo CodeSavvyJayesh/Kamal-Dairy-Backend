@@ -77,4 +77,10 @@ public class OrderService {
 
         return savedOrder;
     }
+
+    // Order history
+    public List<Order> getUserOrders(String userEmail)
+    {
+        return orderRepository.findByUserEmail(userEmail);
+    }
 }
