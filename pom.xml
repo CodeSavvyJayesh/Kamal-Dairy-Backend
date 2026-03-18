@@ -47,6 +47,13 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- Razorpay Dependency -->
+        <dependency>
+            <groupId>com.razorpay</groupId>
+            <artifactId>razorpay-java</artifactId>
+            <version>1.4.4</version>
+        </dependency>
+
         <!-- 🗄️ Spring Data JPA + Hibernate -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
