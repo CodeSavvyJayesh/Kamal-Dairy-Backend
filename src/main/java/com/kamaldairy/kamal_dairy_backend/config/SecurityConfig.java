@@ -75,8 +75,8 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/products/**",
                                 "/api/trending-products/**",
-                                "api/contact/**",
-                                "api/payment/**"
+                                "/api/contact/**",
+                                "/api/payment/**"
                         ).permitAll()
 
                         // Allow CORS preflight
