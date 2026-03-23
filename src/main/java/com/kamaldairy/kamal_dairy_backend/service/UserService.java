@@ -42,12 +42,10 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole("ROLE_USER");
 
-        // Generate OTP
         SecureRandom random = new SecureRandom();
         int otpNumber = 100000 + random.nextInt(900000);
         String otp = String.valueOf(otpNumber);
 
-        // Hash OTP
         String hashedOtp = passwordEncoder.encode(otp);
 
         user.setEnabled(false);
@@ -84,7 +82,7 @@ public class UserService {
     }
 
     // =======================
-    // LOGIN
+    // LOGIN (EXISTING)
     // =======================
     public String login(LoginRequest request) {
 
@@ -100,5 +98,13 @@ public class UserService {
         }
 
         return JwtUtil.generateToken(user.getEmail(), user.getRole());
+    }
+
+    // =======================
+    // NEW METHOD (IMPORTANT)
+    // =======================
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }
