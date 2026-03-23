@@ -27,37 +27,36 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    // Password encoder
+    // 🔐 Password encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // JWT Filter
+    // 🔐 JWT Filter
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(UserRepository userRepository) {
         return new JwtAuthenticationFilter(userRepository);
     }
 
-    // GLOBAL CORS CONFIGURATION
+    // 🌐 CORS CONFIG
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-        configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-
         source.registerCorsConfiguration("/**", configuration);
 
         return source;
     }
 
-    // SECURITY RULES
+    // 🔥 SECURITY CONFIG
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
@@ -70,7 +69,10 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // PUBLIC APIs
+                        // ✅ TEST ENDPOINTS (FOR BROWSER)
+                        .requestMatchers("/", "/test").permitAll()
+
+                        // ✅ PUBLIC APIs
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/products/**",
@@ -79,18 +81,18 @@ public class SecurityConfig {
                                 "/api/payment/**"
                         ).permitAll()
 
-                        // Allow CORS preflight
+                        // ✅ CORS PREFLIGHT
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // PROTECTED APIs
+                        // 🔐 PROTECTED APIs
                         .requestMatchers("/api/cart/**").authenticated()
                         .requestMatchers("/api/orders/**").authenticated()
 
-
-                        // Everything else requires login
+                        // 🔐 EVERYTHING ELSE PROTECTED
                         .anyRequest().authenticated()
                 )
 
+                // 🔥 JWT FILTER
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
