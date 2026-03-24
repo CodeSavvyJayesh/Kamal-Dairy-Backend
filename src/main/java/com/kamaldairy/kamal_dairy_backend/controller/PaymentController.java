@@ -4,7 +4,7 @@ import com.kamaldairy.kamal_dairy_backend.service.PaymentService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@CrossOrigin(origins = "https://localhost:5173")
+@CrossOrigin(origins = "*")
 @RequestMapping("api/payment")
 public class PaymentController {
     // this class will basically handle the http request for the payment page
