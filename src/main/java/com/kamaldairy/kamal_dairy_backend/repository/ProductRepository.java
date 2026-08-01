@@ -11,4 +11,7 @@ public interface ProductRepository extends JpaRepository<Product,Integer> {
 
     List<Product> findByCategory(String category);
     List<Product> findTop3ByIsTrendingTrue();
+
+     // here we have to check how much time we are requiring before optimization in order to retrival of data
+
 }
