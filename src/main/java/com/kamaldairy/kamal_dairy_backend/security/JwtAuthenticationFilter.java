@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -17,9 +18,11 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
-    public JwtAuthenticationFilter(UserRepository userRepository) {
+    public JwtAuthenticationFilter(UserRepository userRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -38,23 +41,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
 
-        if (JwtUtil.isTokenValid(token)) {
+        if (jwtUtil.isTokenValid(token)) {
 
-            String email = JwtUtil.extractEmail(token);
+            String email = jwtUtil.extractEmail(token);
 
             User user = userRepository.findByEmail(email).orElse(null);
 
-            if (user != null) {
+            // Only authenticate verified accounts. A disabled account must not
+            // be able to keep using a token issued before it was disabled.
+            if (user != null && user.isEnabled()) {
 
-                SimpleGrantedAuthority authority =
-                        new SimpleGrantedAuthority(user.getRole());
+                // The role is taken from the DATABASE, not from the token claim.
+                // If an admin is demoted, the change takes effect immediately
+                // instead of waiting for the old token to expire.
+                String role = user.getRole() == null ? "ROLE_USER" : user.getRole();
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 email,
                                 null,
-                                List.of(authority)
+                                List.of(new SimpleGrantedAuthority(role))
                         );
+
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }

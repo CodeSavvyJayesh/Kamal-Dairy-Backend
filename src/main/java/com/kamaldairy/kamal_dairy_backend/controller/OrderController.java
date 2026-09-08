@@ -1,5 +1,6 @@
 package com.kamaldairy.kamal_dairy_backend.controller;
 
+import com.kamaldairy.kamal_dairy_backend.dto.PlaceOrderRequest;
 import com.kamaldairy.kamal_dairy_backend.model.Order;
 import com.kamaldairy.kamal_dairy_backend.service.OrderService;
 import org.springframework.security.core.Authentication;
@@ -9,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin(origins = "*")
 public class OrderController {
 
     private final OrderService orderService;
@@ -18,26 +18,20 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    // 🔥 PLACE ORDER
+    /**
+     * Places an order. Requires verified proof of payment in the body -
+     * a bare POST is now rejected.
+     */
     @PostMapping("/place")
-    public Order placeOrder(Authentication authentication) {
-
-        String userEmail = authentication.getName();
-        System.out.println("ORDER SAVED FOR: " + userEmail); // debug
-
-        return orderService.placeOrder(userEmail);
+    public Order placeOrder(
+            @RequestBody PlaceOrderRequest request,
+            Authentication authentication
+    ) {
+        return orderService.placeOrder(authentication.getName(), request);
     }
 
-    // 🔥 GET MY ORDERS
     @GetMapping("/my-orders")
     public List<Order> getMyOrders(Authentication authentication) {
-
-        String userEmail = authentication.getName();
-        System.out.println("FETCH EMAIL: " + userEmail); // debug
-
-        List<Order> orders = orderService.getUserOrders(userEmail);
-        System.out.println("Orders found : " + orders.size());
-
-        return orders;
+        return orderService.getUserOrders(authentication.getName());
     }
 }

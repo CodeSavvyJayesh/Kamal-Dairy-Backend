@@ -32,5 +32,8 @@ build/
 ### VS Code ###
 .vscode/
 
-# Application secrets
-src/main/resources/application.properties
+# Application secrets are supplied as environment variables (see SECURITY-SETUP.md)
+# Local environment values (never commit)
+.env
+.env.local
+intellij-env.txt

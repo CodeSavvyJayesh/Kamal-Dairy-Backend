@@ -46,6 +46,8 @@ package com.kamaldairy.kamal_dairy_backend.model;
 import jakarta.persistence.*;
 
 @Entity
+// here we can see that we are cannot use the lombok annotations just because we have no added that dependence
+// product name is mapping with the products
 @Table(name = "products")
 public class Product{
     @Id
@@ -59,9 +61,11 @@ public class Product{
     private boolean isTrending;
 
     // required by JPA
+    // no args constructor
     public Product(){
 
     }
+    // all args constructor
     public Product(int id,String name,double price,String category,String imageUrl)
     {
          this.id = id;

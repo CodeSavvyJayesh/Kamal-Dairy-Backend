@@ -1,4 +1,9 @@
 package com.kamaldairy.kamal_dairy_backend.exception;
 
-public class UserNotFoundException {
+import org.springframework.http.HttpStatus;
+
+public class UserNotFoundException extends ApiException {
+    public UserNotFoundException() {
+        super("User not found.", HttpStatus.NOT_FOUND);
+    }
 }

@@ -6,12 +6,12 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+// Id type is Long, matching User.id. It used to be declared as Integer,
+// which made findById(...) fail at runtime.
 @Repository
-public interface UserRepository extends JpaRepository<User,Integer> {
+public interface UserRepository extends JpaRepository<User, Long> {
 
-     // find the user by email (used in signup & login)
     Optional<User> findByEmail(String email);
-    // check if email already exist
-    boolean existsByEmail(String email);
 
+    boolean existsByEmail(String email);
 }

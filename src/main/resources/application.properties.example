@@ -1,0 +1,19 @@
+# Template. Copy the variable names into your environment (IntelliJ run config,
+# Render dashboard, docker -e flags). Never put real values in a committed file.
+
+DB_URL=jdbc:mysql://localhost:3306/kamal_dairy
+DB_USERNAME=root
+DB_PASSWORD=your-mysql-password
+
+MAIL_USERNAME=you@gmail.com
+MAIL_PASSWORD=your-16-char-gmail-app-password
+
+RAZORPAY_KEY=rzp_test_xxxxxxxxxxxx
+RAZORPAY_SECRET=your-razorpay-secret
+
+# openssl rand -base64 48
+JWT_SECRET=replace-with-at-least-32-random-characters
+JWT_EXPIRATION_MS=86400000
+
+CORS_ALLOWED_ORIGINS=http://localhost:5173,https://kamal-dairy-ten.vercel.app
+CONTACT_RECIPIENT=you@gmail.com

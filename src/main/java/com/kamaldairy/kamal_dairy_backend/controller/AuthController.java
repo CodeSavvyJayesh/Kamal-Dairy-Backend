@@ -3,7 +3,6 @@ package com.kamaldairy.kamal_dairy_backend.controller;
 import com.kamaldairy.kamal_dairy_backend.dto.*;
 import com.kamaldairy.kamal_dairy_backend.model.User;
 import com.kamaldairy.kamal_dairy_backend.service.UserService;
-import okhttp3.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
