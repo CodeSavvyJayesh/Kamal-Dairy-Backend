@@ -50,24 +50,41 @@ public class PaymentService {
      */
     @Transactional
     public PaymentOrderResponse createOrderForCart(String userEmail) throws Exception {
-
         long amountPaise = cartService.calculateTotalPaise(userEmail);
+        return createPaymentOrder(userEmail, amountPaise, PaymentOrder.PURPOSE_ORDER);
+    }
+
+    /**
+     * Creates a Razorpay order and records, server side, who it is for, what
+     * it costs and what it is for. Every later verification is checked against
+     * this record, never against anything the browser sends.
+     */
+    @Transactional
+    public PaymentOrderResponse createPaymentOrder(String userEmail, long amountPaise, String purpose)
+            throws Exception {
+
+        if (amountPaise <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero.");
+        }
+
+        JSONObject notes = new JSONObject();
+        notes.put("purpose", purpose);
 
         JSONObject options = new JSONObject();
         options.put("amount", amountPaise);
         options.put("currency", "INR");
         options.put("receipt", "rcpt_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20));
         options.put("payment_capture", 1);
+        options.put("notes", notes);
 
         com.razorpay.Order razorpayOrder = razorpayClient.orders.create(options);
 
         String razorpayOrderId = razorpayOrder.get("id");
 
-        // Remember our own version of the truth: who it is for, and what it costs.
-        paymentOrderRepository.save(
-                new PaymentOrder(razorpayOrderId, userEmail, amountPaise));
+        paymentOrderRepository.save(new PaymentOrder(razorpayOrderId, userEmail, amountPaise, purpose));
 
-        log.info("Created Razorpay order {} for {} ({} paise)", razorpayOrderId, userEmail, amountPaise);
+        log.info("Created Razorpay order {} for {} ({} paise, {})",
+                razorpayOrderId, userEmail, amountPaise, purpose);
 
         return new PaymentOrderResponse(razorpayOrderId, amountPaise, "INR", razorpayKey);
     }

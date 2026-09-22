@@ -30,6 +30,15 @@ public class OrderController {
         return orderService.placeOrder(authentication.getName(), request);
     }
 
+    /**
+     * Pays for the cart from the prepaid wallet. 402 if the balance is short,
+     * in which case nothing is ordered and nothing is charged.
+     */
+    @PostMapping("/place-with-wallet")
+    public Order placeOrderWithWallet(Authentication authentication) {
+        return orderService.placeOrderWithWallet(authentication.getName());
+    }
+
     @GetMapping("/my-orders")
     public List<Order> getMyOrders(Authentication authentication) {
         return orderService.getUserOrders(authentication.getName());

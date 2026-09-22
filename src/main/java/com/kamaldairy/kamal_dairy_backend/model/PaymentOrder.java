@@ -21,6 +21,10 @@ public class PaymentOrder {
     public static final String STATUS_CREATED = "CREATED";
     public static final String STATUS_PAID = "PAID";
 
+    /** What the money is for. A top-up payment can never be redeemed as a cart order, or vice versa. */
+    public static final String PURPOSE_ORDER = "ORDER";
+    public static final String PURPOSE_WALLET_TOPUP = "WALLET_TOPUP";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -47,14 +51,31 @@ public class PaymentOrder {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
+    /** Nullable so rows created before this column existed still load; null means ORDER. */
+    @Column(length = 20)
+    private String purpose;
+
     public PaymentOrder() {}
 
     public PaymentOrder(String razorpayOrderId, String userEmail, long amountPaise) {
+        this(razorpayOrderId, userEmail, amountPaise, PURPOSE_ORDER);
+    }
+
+    public PaymentOrder(String razorpayOrderId, String userEmail, long amountPaise, String purpose) {
         this.razorpayOrderId = razorpayOrderId;
         this.userEmail = userEmail;
         this.amountPaise = amountPaise;
         this.status = STATUS_CREATED;
         this.createdAt = LocalDateTime.now();
+        this.purpose = purpose;
+    }
+
+    public boolean isWalletTopup() {
+        return PURPOSE_WALLET_TOPUP.equals(purpose);
+    }
+
+    public boolean isCartOrder() {
+        return purpose == null || PURPOSE_ORDER.equals(purpose);
     }
 
     public void markPaid(String razorpayPaymentId) {
@@ -71,6 +92,7 @@ public class PaymentOrder {
     public String getRazorpayPaymentId() { return razorpayPaymentId; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getPaidAt() { return paidAt; }
+    public String getPurpose() { return purpose; }
 
     public void setRazorpayOrderId(String razorpayOrderId) { this.razorpayOrderId = razorpayOrderId; }
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }

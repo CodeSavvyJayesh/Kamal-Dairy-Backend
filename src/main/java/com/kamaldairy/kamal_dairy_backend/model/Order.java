@@ -27,6 +27,13 @@ public class Order {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    public static final String PAY_RAZORPAY = "RAZORPAY";
+    public static final String PAY_WALLET = "WALLET";
+
+    /** RAZORPAY or WALLET. Null on orders placed before wallet payments existed (all Razorpay). */
+    @Column(name = "payment_method", length = 12)
+    private String paymentMethod;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items;
 
@@ -52,6 +59,10 @@ public class Order {
     public String getRazorpayPaymentId() { return razorpayPaymentId; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
+
+    public String getPaymentMethod() { return paymentMethod == null ? PAY_RAZORPAY : paymentMethod; }
+
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
 
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
 

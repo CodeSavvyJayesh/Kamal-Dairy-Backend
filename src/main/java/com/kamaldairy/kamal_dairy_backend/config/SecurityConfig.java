@@ -107,6 +107,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/trending-products", "/api/trending-products/**").permitAll()
 
+                        // Public: subscription plans and the live price preview
+                        .requestMatchers(HttpMethod.GET, "/api/subscriptions/plans").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/subscriptions/preview").permitAll()
+
                         // Public: contact form
                         .requestMatchers(HttpMethod.POST, "/api/contact", "/api/contact/**").permitAll()
 
@@ -123,6 +127,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/cart/**").authenticated()
                         .requestMatchers("/api/orders/**").authenticated()
                         .requestMatchers("/api/payment/**").authenticated()
+                        .requestMatchers("/api/wallet", "/api/wallet/**").authenticated()
+                        .requestMatchers("/api/subscriptions", "/api/subscriptions/**").authenticated()
+
+                        // ADMIN ONLY: operations desk (also @PreAuthorize on the controller)
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )
