@@ -1,5 +1,6 @@
 package com.kamaldairy.kamal_dairy_backend.service;
 
+import com.kamaldairy.kamal_dairy_backend.dto.DeliveryAddress;
 import com.kamaldairy.kamal_dairy_backend.dto.PlaceOrderRequest;
 import com.kamaldairy.kamal_dairy_backend.exception.ApiException;
 import com.kamaldairy.kamal_dairy_backend.exception.PaymentVerificationException;
@@ -8,8 +9,12 @@ import com.kamaldairy.kamal_dairy_backend.model.*;
 import com.kamaldairy.kamal_dairy_backend.repository.CartRepository;
 import com.kamaldairy.kamal_dairy_backend.repository.OrderRepository;
 import com.kamaldairy.kamal_dairy_backend.repository.ProductRepository;
+import com.kamaldairy.kamal_dairy_backend.util.Addresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +52,9 @@ public class OrderService {
     /**
      * Places an order ONLY against a payment we can prove is genuine.
      *
-     * Six gates, in order:
+     * Seven gates, in order:
+     *   0. a valid delivery address - checked first, so a bad address never
+     *      burns the payment and the customer can simply retry
      *   1. we have a record of this Razorpay order
      *   2. that record belongs to the caller
      *   3. it was created for a cart order, not a wallet top-up
@@ -61,6 +68,9 @@ public class OrderService {
         if (request == null) {
             throw new PaymentVerificationException("Payment details are required.");
         }
+
+        // 0
+        DeliveryAddress address = Addresses.require(request.getAddress());
 
         // 1 + 2
         PaymentOrder paymentOrder = paymentService.requireOwnPaymentOrder(
@@ -98,6 +108,7 @@ public class OrderService {
 
         Order order = priced.order();
         order.setPaymentMethod(Order.PAY_RAZORPAY);
+        order.deliverTo(address);
         order.setRazorpayOrderId(request.getRazorpayOrderId());
         order.setRazorpayPaymentId(request.getRazorpayPaymentId());
 
@@ -118,13 +129,16 @@ public class OrderService {
      * 402 and the order insert rolls back with it.
      */
     @Transactional
-    public Order placeOrderWithWallet(String userEmail) {
+    public Order placeOrderWithWallet(String userEmail, DeliveryAddress deliverTo) {
+
+        DeliveryAddress address = Addresses.require(deliverTo);
 
         List<CartItem> cartItems = requireCart(userEmail);
         PricedOrder priced = price(userEmail, cartItems);
 
         Order order = priced.order();
         order.setPaymentMethod(Order.PAY_WALLET);
+        order.deliverTo(address);
 
         Order saved = orderRepository.save(order);
 
@@ -140,7 +154,25 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<Order> getUserOrders(String userEmail) {
-        return orderRepository.findByUserEmail(userEmail);
+        List<Order> orders = orderRepository.findByUserEmail(userEmail);
+        orders.forEach(o -> o.getItems().size()); // load items while the session is open
+        return orders;
+    }
+
+    private static final int MAX_ADMIN_PAGE_SIZE = 100;
+
+    /**
+     * Admin: every order, newest first. Items are loaded inside the
+     * transaction so the JSON never depends on open-in-view.
+     */
+    @Transactional(readOnly = true)
+    public Page<Order> listAll(int page, int size) {
+        Page<Order> orders = orderRepository.findAll(PageRequest.of(
+                Math.max(0, page),
+                Math.min(Math.max(1, size), MAX_ADMIN_PAGE_SIZE),
+                Sort.by(Sort.Direction.DESC, "id")));
+        orders.forEach(o -> o.getItems().size()); // load items while the session is open
+        return orders;
     }
 
     // ---------------------------------------------------------------- helpers

@@ -1,5 +1,6 @@
 package com.kamaldairy.kamal_dairy_backend.controller;
 
+import com.kamaldairy.kamal_dairy_backend.dto.CheckoutRequest;
 import com.kamaldairy.kamal_dairy_backend.dto.PlaceOrderRequest;
 import com.kamaldairy.kamal_dairy_backend.model.Order;
 import com.kamaldairy.kamal_dairy_backend.service.OrderService;
@@ -35,8 +36,12 @@ public class OrderController {
      * in which case nothing is ordered and nothing is charged.
      */
     @PostMapping("/place-with-wallet")
-    public Order placeOrderWithWallet(Authentication authentication) {
-        return orderService.placeOrderWithWallet(authentication.getName());
+    public Order placeOrderWithWallet(
+            @RequestBody(required = false) CheckoutRequest request,
+            Authentication authentication
+    ) {
+        return orderService.placeOrderWithWallet(
+                authentication.getName(), request == null ? null : request.address());
     }
 
     @GetMapping("/my-orders")

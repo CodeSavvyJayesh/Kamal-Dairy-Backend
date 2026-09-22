@@ -108,7 +108,7 @@ Signed in (the owner is always the logged-in user):
 | `GET /api/wallet/transactions?page=&size=` | full ledger |
 | `POST /api/wallet/topup` `{amount}` | Razorpay order for a top-up (Rs 50 – 10,000) |
 | `POST /api/wallet/topup/verify` | Razorpay receipt → credit |
-| `POST /api/orders/place-with-wallet` | pay the cart from the wallet (402 if short) |
+| `POST /api/orders/place-with-wallet` `{address}` | pay the cart from the wallet (402 if short) |
 | `GET/POST /api/subscriptions` | list / create |
 | `GET/PUT /api/subscriptions/{id}` | detail with 14-day calendar / update |
 | `POST /api/subscriptions/{id}/pause`, `/resume`, `/cancel` | |

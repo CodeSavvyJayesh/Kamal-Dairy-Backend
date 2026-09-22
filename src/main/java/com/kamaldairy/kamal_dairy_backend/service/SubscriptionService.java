@@ -5,6 +5,7 @@ import com.kamaldairy.kamal_dairy_backend.exception.ApiException;
 import com.kamaldairy.kamal_dairy_backend.exception.ResourceNotFoundException;
 import com.kamaldairy.kamal_dairy_backend.model.*;
 import com.kamaldairy.kamal_dairy_backend.repository.*;
+import com.kamaldairy.kamal_dairy_backend.util.Addresses;
 import com.kamaldairy.kamal_dairy_backend.util.Money;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,6 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -44,8 +44,6 @@ public class SubscriptionService {
     public static final int CALENDAR_DAYS = 14;
     private static final int FORECAST_DAYS = 60;
 
-    private static final Pattern PHONE = Pattern.compile("^[6-9]\\d{9}$");
-    private static final Pattern PINCODE = Pattern.compile("^\\d{6}$");
     private static final DateTimeFormatter SHORT = DateTimeFormatter.ofPattern("EEE, d MMM", Locale.ENGLISH);
 
     private final SubscriptionRepository subscriptionRepository;
@@ -702,34 +700,9 @@ public class SubscriptionService {
         return start;
     }
 
+    /** Same rules as cart orders - see {@link Addresses}. */
     private DeliveryAddress requireAddress(DeliveryAddress a) {
-        if (a == null) {
-            throw bad("Add a delivery address.");
-        }
-
-        String name = trim(a.name());
-        String phone = normalisePhone(a.phone());
-        String address = trim(a.address());
-        String city = trim(a.city());
-        String pincode = trim(a.pincode());
-
-        if (name.length() < 2 || name.length() > 80) {
-            throw bad("Enter the name of the person receiving the delivery.");
-        }
-        if (!PHONE.matcher(phone).matches()) {
-            throw bad("Enter a valid 10-digit mobile number.");
-        }
-        if (address.length() < 5 || address.length() > 255) {
-            throw bad("Enter the full delivery address - flat, building and street.");
-        }
-        if (city.length() < 2 || city.length() > 60) {
-            throw bad("Enter the city.");
-        }
-        if (!PINCODE.matcher(pincode).matches()) {
-            throw bad("Enter a valid 6-digit pincode.");
-        }
-
-        return new DeliveryAddress(name, phone, address, city, pincode);
+        return Addresses.require(a);
     }
 
     private static void applyAddress(Subscription s, DeliveryAddress a) {
@@ -738,21 +711,6 @@ public class SubscriptionService {
         s.setDeliveryAddress(a.address());
         s.setDeliveryCity(a.city());
         s.setDeliveryPincode(a.pincode());
-    }
-
-    private static String normalisePhone(String raw) {
-        String digits = raw == null ? "" : raw.replaceAll("\\D", "");
-        if (digits.length() == 12 && digits.startsWith("91")) {
-            return digits.substring(2);
-        }
-        if (digits.length() == 11 && digits.startsWith("0")) {
-            return digits.substring(1);
-        }
-        return digits;
-    }
-
-    private static String trim(String s) {
-        return s == null ? "" : s.trim().replaceAll("\\s+", " ");
     }
 
     static String hourLabel(int hour) {

@@ -1,5 +1,6 @@
 package com.kamaldairy.kamal_dairy_backend.model;
 
+import com.kamaldairy.kamal_dairy_backend.dto.DeliveryAddress;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -34,6 +35,25 @@ public class Order {
     @Column(name = "payment_method", length = 12)
     private String paymentMethod;
 
+    /*
+     * Where the order goes. Validated before payment is taken. Null only on
+     * orders placed before addresses were saved.
+     */
+    @Column(name = "delivery_name", length = 80)
+    private String deliveryName;
+
+    @Column(name = "delivery_phone", length = 15)
+    private String deliveryPhone;
+
+    @Column(name = "delivery_address", length = 255)
+    private String deliveryAddress;
+
+    @Column(name = "delivery_city", length = 60)
+    private String deliveryCity;
+
+    @Column(name = "delivery_pincode", length = 6)
+    private String deliveryPincode;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items;
 
@@ -63,6 +83,25 @@ public class Order {
     public String getPaymentMethod() { return paymentMethod == null ? PAY_RAZORPAY : paymentMethod; }
 
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+
+    public String getDeliveryName() { return deliveryName; }
+
+    public String getDeliveryPhone() { return deliveryPhone; }
+
+    public String getDeliveryAddress() { return deliveryAddress; }
+
+    public String getDeliveryCity() { return deliveryCity; }
+
+    public String getDeliveryPincode() { return deliveryPincode; }
+
+    /** Copies an already-validated address onto the order. */
+    public void deliverTo(DeliveryAddress a) {
+        this.deliveryName = a.name();
+        this.deliveryPhone = a.phone();
+        this.deliveryAddress = a.address();
+        this.deliveryCity = a.city();
+        this.deliveryPincode = a.pincode();
+    }
 
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
 
