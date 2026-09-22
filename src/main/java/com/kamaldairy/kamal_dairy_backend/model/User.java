@@ -25,6 +25,27 @@ public class User {
     private String otp;
     private LocalDateTime otpExpiry;
 
+    /** Wrong verification codes entered for the current code. */
+    @Column(name = "otp_attempts")
+    private Integer otpAttempts;
+
+    /** Password reset code (BCrypt hash), when one is pending. */
+    @Column(name = "reset_code")
+    private String resetCode;
+
+    @Column(name = "reset_expiry")
+    private LocalDateTime resetExpiry;
+
+    @Column(name = "reset_attempts")
+    private Integer resetAttempts;
+
+    /**
+     * Goes up by one on every password reset. Tokens carry the version they
+     * were issued with, so resetting the password signs out every old session.
+     */
+    @Column(name = "token_version")
+    private Integer tokenVersion;
+
     // this is required by the JPA
      // this is noarg constructor
 
@@ -102,5 +123,20 @@ public class User {
     {
         this.otpExpiry = otpExpiry;
     }
+
+    public Integer getOtpAttempts() { return otpAttempts; }
+    public void setOtpAttempts(Integer otpAttempts) { this.otpAttempts = otpAttempts; }
+
+    public String getResetCode() { return resetCode; }
+    public void setResetCode(String resetCode) { this.resetCode = resetCode; }
+
+    public LocalDateTime getResetExpiry() { return resetExpiry; }
+    public void setResetExpiry(LocalDateTime resetExpiry) { this.resetExpiry = resetExpiry; }
+
+    public Integer getResetAttempts() { return resetAttempts; }
+    public void setResetAttempts(Integer resetAttempts) { this.resetAttempts = resetAttempts; }
+
+    public Integer getTokenVersion() { return tokenVersion; }
+    public void setTokenVersion(Integer tokenVersion) { this.tokenVersion = tokenVersion; }
 
 }

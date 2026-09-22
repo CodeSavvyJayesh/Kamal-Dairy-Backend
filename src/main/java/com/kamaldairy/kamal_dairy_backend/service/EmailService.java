@@ -1,5 +1,8 @@
 package com.kamaldairy.kamal_dairy_backend.service;
 
+import com.kamaldairy.kamal_dairy_backend.model.Order;
+import com.kamaldairy.kamal_dairy_backend.model.OrderItem;
+import com.kamaldairy.kamal_dairy_backend.model.OrderStatus;
 import com.kamaldairy.kamal_dairy_backend.util.Money;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -57,6 +60,37 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    /** Same code as signup, sent after the request returns (resend). */
+    public void sendOtpEmailLater(String to, String otp) {
+        sendAfterCommit(to, "Kamal Dairy - your new verification code",
+                "Hello,\n\nYour new Kamal Dairy verification code is: " + otp
+                        + "\n\nIt is valid for 10 minutes. If you did not ask for it, you can ignore this email."
+                        + "\n\nKamal Dairy");
+    }
+
+    /** Sent after the request returns, so its timing says nothing about whether the email is registered. */
+    public void sendPasswordResetCode(String to, String code, int minutes) {
+        sendAfterCommit(to, "Kamal Dairy - reset your password",
+                "Hello,\n\nUse this code to set a new password for your Kamal Dairy account:\n\n    "
+                        + code
+                        + "\n\nIt is valid for " + minutes + " minutes and can be used once."
+                        + "\n\nIf you did not ask to reset your password, ignore this email - your password"
+                        + " stays the same.\n\nKamal Dairy");
+    }
+
+    public void sendPasswordChanged(String to) {
+        sendAfterCommit(to, "Kamal Dairy - your password was changed",
+                "Hello,\n\nThe password for your Kamal Dairy account was just changed, and every other"
+                        + " device was signed out.\n\nIf this was not you, reset your password straight away"
+                        + " from the sign-in page and contact us.\n\nKamal Dairy");
+    }
+
+    public void sendReviewReply(String to, String productName, String reply) {
+        sendAfterCommit(to, "Kamal Dairy replied to your review",
+                "Hello,\n\nThank you for reviewing " + productName + ". We replied:\n\n"
+                        + reply + "\n\nYou can see it on the product page.\n\nKamal Dairy");
+    }
+
     public void sendWalletTopupReceipt(String to, long amountPaise, long balancePaise, String paymentId) {
         sendAfterCommit(to, "Kamal Dairy - " + Money.label(amountPaise) + " added to your wallet",
                 "Hello,\n\n"
@@ -90,6 +124,66 @@ public class EmailService {
                         + (reason == null || reason.isBlank() ? "" : "Reason: " + reason + "\n\n")
                         + "Sorry about that - the amount is available to use straight away.\n\n"
                         + "Kamal Dairy");
+    }
+
+    // --------------------------------------------------------------- orders
+
+    public void sendOrderPlaced(Order order) {
+        sendAfterCommit(order.getUserEmail(), "Kamal Dairy - order #" + order.getId() + " placed",
+                "Hello " + firstName(order) + ",\n\n"
+                        + "Thank you for your order. We will confirm it shortly.\n\n"
+                        + orderSummary(order)
+                        + "You can follow it, or cancel it until we confirm, under My Orders.\n\n"
+                        + "Kamal Dairy");
+    }
+
+    /** Out for delivery and delivered. */
+    public void sendOrderStatus(Order order) {
+        boolean out = order.getStatus() == OrderStatus.OUT_FOR_DELIVERY;
+        sendAfterCommit(order.getUserEmail(),
+                "Kamal Dairy - order #" + order.getId() + (out ? " is on its way" : " delivered"),
+                "Hello " + firstName(order) + ",\n\n"
+                        + (out
+                            ? "Your order is out for delivery and will reach you soon.\n\n"
+                            : "Your order has been delivered. Enjoy, and thank you for choosing Kamal Dairy.\n\n")
+                        + orderSummary(order)
+                        + "Kamal Dairy");
+    }
+
+    public void sendOrderCancelled(Order order, long refundPaise) {
+        sendAfterCommit(order.getUserEmail(), "Kamal Dairy - order #" + order.getId() + " cancelled",
+                "Hello " + firstName(order) + ",\n\n"
+                        + "Your order #" + order.getId() + " has been cancelled"
+                        + ("CUSTOMER".equals(order.getCancelledBy()) ? " as you asked" : "") + ".\n\n"
+                        + (order.getCancelReason() == null ? "" : "Reason: " + order.getCancelReason() + "\n\n")
+                        + (refundPaise > 0
+                            ? Money.label(refundPaise) + " has been refunded to your Kamal Wallet and is "
+                              + "available to use straight away.\n\n"
+                            : "")
+                        + "Kamal Dairy");
+    }
+
+    private static String firstName(Order order) {
+        String name = order.getDeliveryName();
+        if (name == null || name.isBlank()) {
+            return "there";
+        }
+        return name.trim().split("\\s+")[0];
+    }
+
+    private static String orderSummary(Order order) {
+        StringBuilder sb = new StringBuilder("Order #").append(order.getId()).append("\n");
+        if (order.getItems() != null) {
+            for (OrderItem item : order.getItems()) {
+                sb.append("  ").append(item.getProductName()).append(" x ").append(item.getQuantity()).append("\n");
+            }
+        }
+        sb.append("Total: ").append(Money.label(Money.toPaise(order.getTotalAmount()))).append("\n");
+        if (order.getDeliveryAddress() != null) {
+            sb.append("Deliver to: ").append(order.getDeliveryAddress()).append(", ")
+              .append(order.getDeliveryCity()).append(" ").append(order.getDeliveryPincode()).append("\n");
+        }
+        return sb.append("\n").toString();
     }
 
     /**

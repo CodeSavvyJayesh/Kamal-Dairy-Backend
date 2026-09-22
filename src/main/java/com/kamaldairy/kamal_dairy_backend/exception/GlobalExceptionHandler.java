@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -26,6 +27,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(body);
     }
 
+    /** 429: say how long to wait, in the body and the standard Retry-After header. */
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<Map<String, Object>> handleTooMany(TooManyRequestsException ex) {
+        ResponseEntity<Map<String, Object>> base = build(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        Map<String, Object> body = new LinkedHashMap<>(base.getBody());
+        body.put("retryAfterSeconds", ex.getRetryAfterSeconds());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(body);
+    }
+
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Map<String, Object>> handleApiException(ApiException ex) {
         return build(ex.getStatus(), ex.getMessage());
@@ -35,6 +47,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
         return build(HttpStatus.FORBIDDEN,
                 "You do not have permission to perform this action.");
+    }
+
+    /** Unknown URL: a plain 404, not a logged 500. */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(NoResourceFoundException ex) {
+        return build(HttpStatus.NOT_FOUND, "Not found.");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

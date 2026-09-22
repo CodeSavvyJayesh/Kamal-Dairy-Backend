@@ -49,11 +49,17 @@ public class JwtUtil {
 
     // Generate token
     public String generateToken(String email, String role) {
+        return generateToken(email, role, 0);
+    }
+
+    /** tokenVersion must match the user's current version for the token to be accepted. */
+    public String generateToken(String email, String role, int tokenVersion) {
         Date now = new Date();
 
         return Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
+                .claim("tv", tokenVersion)
                 .setIssuedAt(now)
                 .setExpiration(new Date(now.getTime() + expirationMs))
                 .signWith(key)
@@ -68,6 +74,12 @@ public class JwtUtil {
     // Extract role claim
     public String extractRole(String token) {
         return getClaims(token).get("role", String.class);
+    }
+
+    /** Version the token was issued with. Tokens from before versions existed count as 0. */
+    public int extractTokenVersion(String token) {
+        Object tv = getClaims(token).get("tv");
+        return tv instanceof Number n ? n.intValue() : 0;
     }
 
     // Validate signature + expiry

@@ -23,6 +23,7 @@ public class PaymentService {
     private final RazorpayClient razorpayClient;
     private final PaymentOrderRepository paymentOrderRepository;
     private final CartService cartService;
+    private final StockService stockService;
 
     private final String razorpayKey;
     private final String razorpaySecret;
@@ -31,12 +32,14 @@ public class PaymentService {
             RazorpayClient razorpayClient,
             PaymentOrderRepository paymentOrderRepository,
             CartService cartService,
+            StockService stockService,
             @Value("${razorpay.key}") String razorpayKey,
             @Value("${razorpay.secret}") String razorpaySecret
     ) {
         this.razorpayClient = razorpayClient;
         this.paymentOrderRepository = paymentOrderRepository;
         this.cartService = cartService;
+        this.stockService = stockService;
         this.razorpayKey = razorpayKey;
         this.razorpaySecret = razorpaySecret;
     }
@@ -51,6 +54,8 @@ public class PaymentService {
     @Transactional
     public PaymentOrderResponse createOrderForCart(String userEmail) throws Exception {
         long amountPaise = cartService.calculateTotalPaise(userEmail);
+        // Do not open a payment for something that is already gone (409).
+        stockService.requireAvailable(userEmail);
         return createPaymentOrder(userEmail, amountPaise, PaymentOrder.PURPOSE_ORDER);
     }
 

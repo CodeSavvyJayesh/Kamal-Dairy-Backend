@@ -1,6 +1,7 @@
 package com.kamaldairy.kamal_dairy_backend.service;
 
 import com.kamaldairy.kamal_dairy_backend.exception.ApiException;
+import com.kamaldairy.kamal_dairy_backend.exception.OutOfStockException;
 import com.kamaldairy.kamal_dairy_backend.exception.ResourceNotFoundException;
 import com.kamaldairy.kamal_dairy_backend.model.CartItem;
 import com.kamaldairy.kamal_dairy_backend.model.Product;
@@ -65,6 +66,8 @@ public class CartService {
             newQuantity = MAX_QUANTITY_PER_ITEM;
         }
 
+        requireStock(product, newQuantity, existing.map(CartItem::getQuantity).orElse(0));
+
         item.setUserEmail(userEmail);
         item.setProductId(productId);
         item.setProductName(product.getName());
@@ -90,7 +93,16 @@ public class CartService {
             });
         }
 
-        return cartRepository.saveAll(items);
+        List<CartItem> saved = cartRepository.saveAll(items);
+
+        // Not stored: shown so the cart can warn before checkout.
+        for (CartItem item : saved) {
+            productRepository.findById(item.getProductId()).ifPresent(product -> {
+                item.setStock(product.getStock());
+                item.setImageUrl(product.getImageUrl());
+            });
+        }
+        return saved;
     }
 
     @Transactional
@@ -99,6 +111,12 @@ public class CartService {
         validateQuantity(quantity);
 
         CartItem item = requireOwnedItem(userEmail, cartItemId);
+
+        // Lowering a quantity is always allowed; raising it must fit the shelf.
+        if (quantity > item.getQuantity()) {
+            productRepository.findById(item.getProductId())
+                    .ifPresent(product -> requireStock(product, quantity, item.getQuantity()));
+        }
 
         item.setQuantity(Math.min(quantity, MAX_QUANTITY_PER_ITEM));
 
@@ -169,6 +187,19 @@ public class CartService {
         }
 
         return item;
+    }
+
+    /** 409 when the cart would hold more than is on the shelf. Untracked products always pass. */
+    private static void requireStock(Product product, int wanted, int alreadyInCart) {
+        Integer stock = product.getStock();
+        if (stock == null || wanted <= stock) {
+            return;
+        }
+        if (stock <= 0) {
+            throw new OutOfStockException(product.getName() + " is out of stock right now.");
+        }
+        throw new OutOfStockException("Only " + stock + " of " + product.getName() + " left"
+                + (alreadyInCart > 0 ? " and you already have " + alreadyInCart + " in your cart." : "."));
     }
 
     private void validateQuantity(int quantity) {

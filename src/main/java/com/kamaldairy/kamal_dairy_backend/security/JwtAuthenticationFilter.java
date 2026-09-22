@@ -49,7 +49,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // Only authenticate verified accounts. A disabled account must not
             // be able to keep using a token issued before it was disabled.
-            if (user != null && user.isEnabled()) {
+            // A password reset bumps the user's token version, so every token
+            // issued before it stops working at once.
+            int current = user == null || user.getTokenVersion() == null ? 0 : user.getTokenVersion();
+
+            if (user != null && user.isEnabled() && jwtUtil.extractTokenVersion(token) == current) {
 
                 // The role is taken from the DATABASE, not from the token claim.
                 // If an admin is demoted, the change takes effect immediately

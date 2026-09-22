@@ -15,6 +15,13 @@ public class CartItem {
     private String productName;
     private double price;
     private int quantity;
+
+    /* Filled in when the cart is read, never stored. */
+    @Transient
+    private Integer stock;
+    @Transient
+    private String imageUrl;
+
     public CartItem(){}
     public CartItem(String userEmail,Integer productId,String productName,double price,int quantity)
     {
@@ -66,4 +73,11 @@ public class CartItem {
     {
         this.quantity = quantity;
     }
+
+    /** Units left on the shelf, or null when the product is not stock-tracked. */
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }

@@ -23,6 +23,16 @@ public interface SubscriptionDeliveryRepository extends JpaRepository<Subscripti
 
     boolean existsBySubscriptionIdAndDeliveryDate(Long subscriptionId, LocalDate deliveryDate);
 
+    /** Reviews: has this customer received this product through a subscription? */
+    long countByUserEmailAndProductIdAndStatus(String userEmail, Integer productId, DeliveryStatus status);
+
+    /** Analytics: every delivery in a date range, any status. */
+    List<SubscriptionDelivery> findByDeliveryDateBetween(LocalDate from, LocalDate to);
+
+    /** Analytics: each customer's first delivery that was charged. */
+    @Query("select d.userEmail, min(d.deliveryDate) from SubscriptionDelivery d where d.status in :statuses group by d.userEmail")
+    List<Object[]> firstChargedDeliveryPerCustomer(@Param("statuses") Collection<DeliveryStatus> statuses);
+
     List<SubscriptionDelivery> findByDeliveryDate(LocalDate deliveryDate);
 
     List<SubscriptionDelivery> findBySubscriptionIdAndDeliveryDateBetween(
