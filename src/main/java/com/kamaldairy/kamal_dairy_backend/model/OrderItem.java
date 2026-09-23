@@ -15,6 +15,20 @@ public class OrderItem {
     private int quantity;
     private double price;
 
+    /**
+     * HSN code and GST rate as they stood when the order was placed.
+     *
+     * Snapshotted for the same reason the name and price are: an invoice is a
+     * record of one moment. If the dairy later moves a product to a different
+     * slab, or the council changes a rate, reprinting an old invoice must still
+     * show the tax that was actually charged - not today's.
+     */
+    @Column(name = "hsn_code", length = 12)
+    private String hsnCode;
+
+    @Column(name = "gst_rate_percent")
+    private Integer gstRatePercent;
+
     @ManyToOne
     @JoinColumn(name = "order_id")
     @JsonIgnore
@@ -40,6 +54,23 @@ public class OrderItem {
 
     public double getPrice() {
         return price;
+    }
+
+    public String getHsnCode() {
+        return hsnCode;
+    }
+
+    public void setHsnCode(String hsnCode) {
+        this.hsnCode = hsnCode;
+    }
+
+    /** 0 on items ordered before GST rates were recorded: they invoice as nil-rated. */
+    public int getGstRatePercent() {
+        return gstRatePercent == null ? 0 : gstRatePercent;
+    }
+
+    public void setGstRatePercent(Integer gstRatePercent) {
+        this.gstRatePercent = gstRatePercent;
     }
 
     public Order getOrder() {

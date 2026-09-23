@@ -45,17 +45,20 @@ public class OrderLifecycleService {
     private final WalletService walletService;
     private final StockService stockService;
     private final EmailService emailService;
+    private final InvoiceService invoiceService;
     private final DeliveryCalendar calendar;
 
     public OrderLifecycleService(OrderRepository orderRepository,
                                  WalletService walletService,
                                  StockService stockService,
                                  EmailService emailService,
+                                 InvoiceService invoiceService,
                                  DeliveryCalendar calendar) {
         this.orderRepository = orderRepository;
         this.walletService = walletService;
         this.stockService = stockService;
         this.emailService = emailService;
+        this.invoiceService = invoiceService;
         this.calendar = calendar;
     }
 
@@ -101,10 +104,26 @@ public class OrderLifecycleService {
         order.moveTo(next, calendar.now());
         log.info("Order {} moved {} -> {}", order.getId(), current, next);
 
-        if (next == OrderStatus.OUT_FOR_DELIVERY || next == OrderStatus.DELIVERED) {
+        if (next == OrderStatus.DELIVERED) {
+            // Delivery is the moment the supply is complete, so this is when the
+            // tax invoice is issued - inside this transaction, with the row still
+            // locked, so the number and the status can never disagree. Drawing the
+            // PDF is separate and best-effort; the email still goes out if it
+            // fails, and the document stays downloadable from My Orders.
+            invoiceService.issueOnDelivery(order);
+            emailService.sendOrderDelivered(order, invoiceService.renderQuietly(order),
+                    invoiceFileName(order));
+        } else if (next == OrderStatus.OUT_FOR_DELIVERY) {
             emailService.sendOrderStatus(order);
         }
         return order;
+    }
+
+    private static String invoiceFileName(Order order) {
+        String stem = order.getInvoiceNo() == null
+                ? "order-" + order.getId()
+                : order.getInvoiceNo().replaceAll("[^A-Za-z0-9]+", "-");
+        return "Kamal-Dairy-invoice-" + stem + ".pdf";
     }
 
     @Transactional

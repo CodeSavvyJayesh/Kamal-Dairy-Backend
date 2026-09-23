@@ -86,6 +86,18 @@ public class Order {
     @Column(name = "refunded_paise")
     private Long refundedPaise;
 
+    /*
+     * Tax invoice. Issued once, when the order is delivered - that is the point
+     * the goods change hands and the supply is complete. Unique at the database
+     * level as the last guard: whatever happens above it, one number can only
+     * ever belong to one order.
+     */
+    @Column(name = "invoice_no", length = 32, unique = true)
+    private String invoiceNo;
+
+    @Column(name = "invoiced_at")
+    private LocalDateTime invoicedAt;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items;
 
@@ -151,6 +163,22 @@ public class Order {
     public BigDecimal getRefundedAmount() { return refundedPaise == null ? null : Money.toRupees(refundedPaise); }
 
     public void setStatus(OrderStatus status) { this.status = status; }
+
+    // -------------------------------------------------------------- invoice
+
+    /** The tax invoice number, or null while the order is not yet delivered. */
+    public String getInvoiceNo() { return invoiceNo; }
+
+    public LocalDateTime getInvoicedAt() { return invoicedAt; }
+
+    /** True once a tax invoice has been issued for this order. */
+    public boolean isInvoiced() { return invoiceNo != null; }
+
+    /** Stamps the invoice. Only InvoiceService calls this, with the row locked. */
+    public void stampInvoice(String invoiceNo, LocalDateTime at) {
+        this.invoiceNo = invoiceNo;
+        this.invoicedAt = at;
+    }
 
     /** Forward move. Validation is the caller's job (OrderLifecycleService). */
     public void moveTo(OrderStatus next, LocalDateTime at) {

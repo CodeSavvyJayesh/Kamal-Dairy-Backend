@@ -234,6 +234,10 @@ public class OrderService {
             item.setProductName(product.getName());
             item.setQuantity(cartItem.getQuantity());
             item.setPrice(product.getPrice());
+            // Tax details are snapshotted with the price: the invoice must always
+            // show the rate that was charged, not whatever the rate is today.
+            item.setHsnCode(product.getHsnCode());
+            item.setGstRatePercent(product.getGstRatePercent());
             item.setOrder(order);
 
             orderItems.add(item);

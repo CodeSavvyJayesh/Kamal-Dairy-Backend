@@ -29,7 +29,8 @@ lifecycle with refunds, verified-buyer product reviews, and an admin console wit
    - [3.7 Subscriptions](#37-subscriptions)
    - [3.8 Reviews and ratings](#38-reviews-and-ratings)
    - [3.9 Sales analytics](#39-sales-analytics)
-   - [3.10 Email](#310-email)
+   - [3.10 Invoicing](#310-invoicing)
+   - [3.11 Email](#311-email)
 4. [API reference](#4-api-reference)
 5. [Data model](#5-data-model)
 6. [Money, time and concurrency rules](#6-money-time-and-concurrency-rules)
@@ -54,6 +55,8 @@ lifecycle with refunds, verified-buyer product reviews, and an admin console wit
   pause, skip a date, set a vacation window, or cancel. Deliveries are billed from the wallet.
 - Top up the wallet, see every credit and debit, and get a forecast of how long the balance lasts.
 - Review a product once it has actually been delivered, edit or delete that review later.
+- Download the GST invoice for any order - a proforma while it is on its way, the real tax invoice
+  once it is delivered, which also arrives by email.
 
 **For the admin**
 
@@ -103,6 +106,10 @@ com.kamaldairy.kamal_dairy_backend
 | `SubscriptionAdminService` | dispatch sheet, mark delivered, refund, stats |
 | `DeliveryCalendar` | the single source of "now" in IST, plus the daily cut-off |
 | `ReviewService` | eligibility, write / edit / delete, moderation, rating rollups |
+| `InvoiceService` | builds the invoice figures, issues it on delivery, CSV register |
+| `InvoiceRenderer` | draws the invoice onto A4 |
+| `InvoiceNumberService` | consecutive, gapless invoice serials per financial year |
+| `HealthController` | liveness for the platform, with a real database check |
 | `AnalyticsService` | the whole sales dashboard in one pass |
 | `EmailService` | every transactional email |
 | `TrendingProductService` | home page picks |
@@ -356,11 +363,45 @@ It reads orders and subscription deliveries once each and aggregates in Java, so
 single round trip regardless of how many charts the UI draws. The frontend renders it with
 hand-built SVG charts - no chart library.
 
-### 3.10 Email
+### 3.10 Invoicing
+
+Every cart order produces a PDF. A **delivered** order gets a numbered **tax invoice** - or a **bill
+of supply** when `app.invoice.gstin` is blank, because an unregistered seller must not show GST. An
+order still on its way gets a **proforma** marked "Not a tax invoice". A cancelled order gets a 409:
+the money is already back in the wallet, so there is nothing to invoice.
+
+**Numbers.** `KD/2026-27/000042` - prefix, Indian financial year, six-digit serial. Issued when the
+order is marked delivered, inside the same transaction as the status change and with the order row
+already locked, so the two can never disagree. The serial comes from an `invoice_counters` row
+incremented with a single `UPDATE`, whose row lock serialises concurrent allocations; the first
+invoice of a new financial year opens the row in a `REQUIRES_NEW` transaction so a race between two
+deliveries cannot poison either one. `orders.invoice_no` is unique as the last guard.
+
+**Tax.** Shelf prices include GST, so tax is extracted out of each line rather than added on:
+`taxable = gross x 100 / (100 + rate)`, `tax = gross - taxable`. Working down from gross is what keeps
+the printed total equal to the amount actually charged. An odd paisa of tax is moved into the taxable
+value so **CGST always equals SGST exactly** - on every line and in every total. Rates and HSN codes
+are set per product by the admin and **snapshotted onto the order line**, so a later rate change never
+rewrites an old invoice.
+
+**The PDF is written by hand.** `util/pdf/` is a small PDF 1.4 writer - `PdfDoc` for pages, text,
+rules and wrapping, `PdfFont` carrying the real Adobe glyph widths for Helvetica. Every reader already
+has Helvetica, so nothing is embedded and an invoice is 8-12 KB with **no dependency and no licence**
+to think about, where iText would bring AGPL and PDFBox several megabytes. Long orders flow onto
+further pages with the table header repeated.
+
+The invoice is attached to the delivery email, downloadable by the customer and the admin, and
+exportable for a period as a CSV register, one row per item line with the tax split out.
+
+Full details in [INVOICING.md](INVOICING.md).
+
+### 3.11 Email
 
 `EmailService` sends every transactional message: OTP, password reset, order confirmation, each
 order status change, order cancellation and refund, subscription events, failed subscription
-billing, contact-form messages and admin replies to reviews. Mail that is not on the critical path
+billing, contact-form messages and admin replies to reviews. The delivery email is a MIME message
+carrying the tax invoice as a PDF attachment; if rendering it fails the email still goes out without
+it, and the invoice stays downloadable from My Orders. Mail that is not on the critical path
 is sent asynchronously so a slow SMTP server never makes a request hang.
 
 ---
@@ -411,6 +452,7 @@ is sent asynchronously so a slow SMTP server never makes a request hang.
 | POST | `/api/orders/place-with-wallet` | conditional debit, same gates |
 | GET | `/api/orders/my-orders` | newest first, items eagerly loaded |
 | POST | `/api/orders/{id}/cancel` | open orders only, refunds to the wallet, restocks |
+| GET | `/api/orders/{id}/invoice` | PDF: tax invoice, bill of supply or proforma; 409 if cancelled |
 
 ### Wallet - `/api/wallet`
 
@@ -453,6 +495,8 @@ is sent asynchronously so a slow SMTP server never makes a request hang.
 | GET | `/orders/stats` | counts per status + low-stock count |
 | POST | `/orders/{id}/status` | advance one step |
 | POST | `/orders/{id}/cancel` | refund + restock |
+| GET | `/orders/{id}/invoice` | any customer's invoice, for a reprint |
+| GET | `/orders/invoice-register.csv?from=&to=` | one row per item line, for the accountant |
 | GET | `/products/stock-alerts` | below threshold |
 | PUT | `/products/{id}/stock` | set |
 | POST | `/products/{id}/restock` | add |
@@ -470,6 +514,7 @@ is sent asynchronously so a slow SMTP server never makes a request hang.
 | Method | Path |
 |---|---|
 | POST | `/api/contact` |
+| GET | `/api/health` |
 | GET | `/test` |
 
 ---
@@ -481,10 +526,11 @@ Schema is managed by Hibernate (`ddl-auto=update`).
 | Table | Holds |
 |---|---|
 | `users` | name, email, BCrypt password, role, enabled, OTP hash + expiry + attempts, lock state, `token_version` |
-| `products` | name, category, price, image, description, `stock`, `rating_count`, `rating_total` |
+| `products` | name, category, price, image, description, `stock`, `rating_count`, `rating_total`, `hsn_code`, `gst_rate_percent` |
 | `cart_items` | one row per user + product |
-| `orders` | user, total, `created_at` (IST), `status`, payment method, and the five `delivery_*` columns |
-| `order_item` | product id, name and price **snapshotted** at purchase time, quantity |
+| `orders` | user, total, `created_at` (IST), `status`, payment method, the five `delivery_*` columns, `invoice_no` (unique) and `invoiced_at` |
+| `order_item` | product id, name, price, HSN and GST rate **snapshotted** at purchase time, quantity |
+| `invoice_counters` | one row per financial year holding the last serial issued |
 | `payment_orders` | Razorpay order id, amount, state - the replay guard |
 | `wallets` | balance in paise, unique per user |
 | `wallet_transactions` | type, source, amount, balance after, reference, indexed `(user_email, created_at)` |
@@ -494,8 +540,8 @@ Schema is managed by Hibernate (`ddl-auto=update`).
 | `subscription_generation_runs` | one row per generated date, unique on `delivery_date` |
 | `product_reviews` | rating, title, body, `verified_via`, status, hidden reason, admin reply, timestamps; unique `(product_id, user_email)` |
 
-Order items snapshot the product name and price, so renaming or repricing a product never rewrites
-what a customer actually paid.
+Order items snapshot the product name, price, HSN code and GST rate, so renaming, repricing or
+re-rating a product never rewrites what a customer actually paid or was taxed.
 
 ---
 
@@ -541,6 +587,7 @@ customer cancels, and eight concurrent replays of the same top-up payment.
 | `MAIL_USERNAME`, `MAIL_PASSWORD` | Gmail address and **app password** |
 | `CONTACT_RECIPIENT` | where the contact form lands |
 | `CORS_ALLOWED_ORIGINS` | comma-separated frontend origins |
+| `INVOICE_*` | seller name, GSTIN, FSSAI, address, phone, email, number prefix, signatory, terms |
 
 Application-level settings, all with sensible defaults:
 
@@ -552,6 +599,8 @@ Application-level settings, all with sensible defaults:
 | `app.auth.code-cooldown-seconds` | `60` | minimum gap between OTP / reset emails |
 | `app.cors.allowed-origins` | - | from `CORS_ALLOWED_ORIGINS` |
 | `app.contact.recipient` | - | from `CONTACT_RECIPIENT` |
+| `app.invoice.gstin` | blank | **blank issues a bill of supply instead of a tax invoice** |
+| `app.invoice.prefix` | `KD` | leading segment of every invoice number |
 
 Profiles: `application-docker.properties` and `application-render.properties` for the two deploy
 targets.
@@ -580,17 +629,28 @@ The frontend expects the API at `VITE_API_URL` - point it at `http://localhost:8
 
 ## 9. Deployment
 
-- **Docker** - the included `Dockerfile` builds the fat JAR and runs it with the `docker` profile.
-- **Render** - the `render` profile; set every variable above in the dashboard.
-- **Frontend** - built with Vite and served by Nginx on AWS EC2, with `CORS_ALLOWED_ORIGINS`
-  pointing at that origin.
+**Backend on Railway, frontend on Vercel.** Step by step, with every environment variable and where
+each value comes from: [DEPLOYMENT.md](DEPLOYMENT.md).
+
+- `SPRING_PROFILES_ACTIVE=railway` selects `application-railway.properties`, which binds to the
+  `PORT` Railway injects, caps the Hikari pool so a restart cannot exhaust a managed MySQL plan,
+  turns off SQL logging and closes the session before the view renders.
+- `railway.json` pins the Dockerfile builder, `/api/health` as the health check and a single
+  replica - the rate limiter is in-memory and the subscription generator should run in one place.
+- The `Dockerfile` is two-stage: build with the JDK, ship a JRE image running as a non-root user,
+  with dependencies cached in their own layer.
+- `GET /api/health` really opens a database connection rather than returning a bare 200, so a
+  container that is up but cannot reach MySQL is reported as down instead of staying in rotation.
+- CORS is matched as **patterns**, so `https://*.vercel.app` lets preview deployments through while
+  the list stays an allowlist.
+- Profiles for **Render** and plain **Docker** are still in the repo if you want them.
 
 ## 10. Testing
 
 - `SubscriptionScheduleTest` - JUnit, covers the date maths for every frequency.
-- **End-to-end API suites** - **316 assertions** across six suites, all green: delivery addresses
-  (32), order lifecycle and stock (66), auth hardening (47), sales analytics (29), reviews (65), and
-  the original checkout, wallet and subscription flows (77). They run against a real boot of the app
+- **End-to-end API suites** - **396 assertions** across seven suites, all green: delivery addresses
+  (32), order lifecycle and stock (66), auth hardening (47), sales analytics (29), reviews (65),
+  invoicing (80), and the original checkout, wallet and subscription flows (77). They run against a real boot of the app
   on an H2 file database in MySQL mode with a local SMTP sink, and include the concurrency races
   listed in [section 6](#6-money-time-and-concurrency-rules).
 - **Browser runs** - Playwright walks the customer and admin journeys on desktop and at 390 px, with
@@ -602,5 +662,7 @@ The frontend expects the API at `VITE_API_URL` - point it at `http://localhost:8
 |---|---|
 | [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md) | the subscription engine, schedules, billing and admin tools in depth |
 | [ORDERS.md](ORDERS.md) | order lifecycle, stock rules and refund behaviour |
+| [INVOICING.md](INVOICING.md) | invoice numbering, GST maths, the PDF writer and the register |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Railway and Vercel, every environment variable, first-run checks |
 | [SECURITY-SETUP.md](SECURITY-SETUP.md) | credential handling, what to rotate and how |
 | [HELP.md](HELP.md) | Spring Boot starter references |

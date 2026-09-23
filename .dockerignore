@@ -1,0 +1,33 @@
+# Keep the build context small and keep secrets out of it.
+#
+# The Dockerfile only copies src, pom.xml and the wrapper, so nothing here would
+# reach the image anyway - but the whole context is uploaded to the builder
+# first, and target/ plus .git can be hundreds of megabytes of pointless upload
+# on every single deploy.
+
+target/
+build/
+.git
+.gitignore
+
+# Secrets. Belt and braces: these must never be anywhere near a build context.
+.env
+.env.*
+!.env.example
+intellij-env.txt
+*.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.settings/
+.classpath
+.project
+
+# Docs and local tooling - not needed to compile
+*.md
+!README.md
+docker-compose*.yml

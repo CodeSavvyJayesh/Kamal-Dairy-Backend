@@ -5,10 +5,13 @@ import com.kamaldairy.kamal_dairy_backend.model.OrderItem;
 import com.kamaldairy.kamal_dairy_backend.model.OrderStatus;
 import com.kamaldairy.kamal_dairy_backend.util.Money;
 import jakarta.annotation.PreDestroy;
+import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -150,6 +153,33 @@ public class EmailService {
                         + "Kamal Dairy");
     }
 
+    /**
+     * Delivered, with the tax invoice attached. The customer gets the document
+     * without having to come back to the site for it, which is the whole point
+     * of issuing it at delivery.
+     *
+     * The PDF is rendered by the caller inside the transaction and handed over as
+     * bytes, so the mail thread never touches a detached entity.
+     */
+    public void sendOrderDelivered(Order order, byte[] invoicePdf, String fileName) {
+        String subject = "Kamal Dairy - order #" + order.getId() + " delivered"
+                + (order.getInvoiceNo() == null ? "" : " (invoice " + order.getInvoiceNo() + ")");
+        String body = "Hello " + firstName(order) + ",\n\n"
+                + "Your order has been delivered. Enjoy, and thank you for choosing Kamal Dairy.\n\n"
+                + orderSummary(order)
+                + (order.getInvoiceNo() == null
+                    ? ""
+                    : "Your invoice " + order.getInvoiceNo() + " is attached, and you can download it "
+                      + "again any time from My Orders.\n\n")
+                + "Kamal Dairy";
+
+        if (invoicePdf == null || invoicePdf.length == 0) {
+            sendAfterCommit(order.getUserEmail(), subject, body);
+            return;
+        }
+        sendAfterCommit(order.getUserEmail(), subject, body, invoicePdf, fileName);
+    }
+
     public void sendOrderCancelled(Order order, long refundPaise) {
         sendAfterCommit(order.getUserEmail(), "Kamal Dairy - order #" + order.getId() + " cancelled",
                 "Hello " + firstName(order) + ",\n\n"
@@ -191,13 +221,30 @@ public class EmailService {
      * rolled-back top-up must never produce a "money added" email.
      */
     private void sendAfterCommit(String to, String subject, String body) {
+        sendAfterCommit(to, subject, body, null, null);
+    }
+
+    /** Same, with an optional PDF attachment. */
+    private void sendAfterCommit(String to, String subject, String body,
+                                 byte[] attachment, String attachmentName) {
         Runnable send = () -> mailExecutor.execute(() -> {
             try {
-                SimpleMailMessage message = new SimpleMailMessage();
-                message.setTo(to);
-                message.setSubject(subject);
-                message.setText(body);
-                mailSender.send(message);
+                if (attachment == null) {
+                    SimpleMailMessage message = new SimpleMailMessage();
+                    message.setTo(to);
+                    message.setSubject(subject);
+                    message.setText(body);
+                    mailSender.send(message);
+                } else {
+                    MimeMessage mime = mailSender.createMimeMessage();
+                    MimeMessageHelper helper = new MimeMessageHelper(mime, true, "UTF-8");
+                    helper.setTo(to);
+                    helper.setSubject(subject);
+                    helper.setText(body);
+                    helper.addAttachment(attachmentName, new ByteArrayResource(attachment),
+                            "application/pdf");
+                    mailSender.send(mime);
+                }
             } catch (Exception e) {
                 log.warn("Could not send '{}' to {}: {}", subject, to, e.getMessage());
             }

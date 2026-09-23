@@ -43,6 +43,11 @@ public interface OrderRepository extends JpaRepository<Order,Integer> {
     @Query("select distinct o from Order o left join fetch o.items where o.createdAt >= :from and o.createdAt < :to")
     List<Order> findWithItemsPlacedBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
+    /** Invoice register for the accountant: everything issued in [from, to), items included. */
+    @Query("select distinct o from Order o left join fetch o.items "
+            + "where o.invoicedAt >= :from and o.invoicedAt < :to order by o.invoiceNo")
+    List<Order> findInvoicedBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
     /** Analytics: each customer's first order that was not cancelled. */
     @Query("select o.userEmail, min(o.createdAt) from Order o where o.status is null or o.status <> :cancelled group by o.userEmail")
     List<Object[]> firstOrderPerCustomer(@Param("cancelled") OrderStatus cancelled);

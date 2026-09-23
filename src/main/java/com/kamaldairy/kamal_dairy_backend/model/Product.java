@@ -85,6 +85,24 @@ public class Product{
     @JsonIgnore
     private Integer ratingTotal;
 
+    /**
+     * HSN code for the invoice. Dairy goods sit in chapter 04 - for example
+     * 0401 for fresh milk, 0406 for paneer, 0405 for butter and ghee. Blank is
+     * allowed: the invoice then simply leaves the column empty.
+     */
+    @Column(name = "hsn_code", length = 12)
+    private String hsnCode;
+
+    /**
+     * GST rate for this product as a whole percentage, and the shelf price is
+     * treated as INCLUDING it. Left to the admin rather than hardcoded: rates
+     * differ by product and change in council meetings, and only the dairy
+     * knows which slab its packaging puts each item in. 0 (the default) means
+     * exempt or nil-rated, which is where loose fresh milk sits.
+     */
+    @Column(name = "gst_rate_percent")
+    private Integer gstRatePercent;
+
     // required by JPA
     // no args constructor
     public Product(){
@@ -163,6 +181,30 @@ public class Product{
         int count = getRatingCount();
         if (count <= 0) return null;
         return Math.round(10.0 * (ratingTotal == null ? 0 : ratingTotal) / count) / 10.0;
+    }
+
+    public String getHsnCode()
+    {
+        return hsnCode;
+    }
+
+    public void setHsnCode(String hsnCode)
+    {
+        this.hsnCode = hsnCode == null || hsnCode.isBlank() ? null : hsnCode.trim();
+    }
+
+    /** 0 when not set, so older products simply invoice as nil-rated. */
+    public int getGstRatePercent()
+    {
+        return gstRatePercent == null ? 0 : gstRatePercent;
+    }
+
+    public void setGstRatePercent(Integer gstRatePercent)
+    {
+        if (gstRatePercent != null && (gstRatePercent < 0 || gstRatePercent > 100)) {
+            throw new IllegalArgumentException("GST rate must be between 0 and 100.");
+        }
+        this.gstRatePercent = gstRatePercent;
     }
 
     /** Only ReviewService calls this, with the product row locked. */

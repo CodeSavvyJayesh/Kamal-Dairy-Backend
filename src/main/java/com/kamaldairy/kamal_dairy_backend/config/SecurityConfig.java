@@ -60,7 +60,17 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(
+        /*
+         * Patterns, not plain origins. Vercel gives every branch and pull
+         * request its own hostname, so an exact-match list would block every
+         * preview deploy - and the usual workaround, "*", is illegal here
+         * because credentials are allowed. setAllowedOriginPatterns takes exact
+         * origins and wildcards alike, so one setting covers
+         * https://kamaldairy.online and https://*.vercel.app.
+         *
+         * A pattern is still an allowlist. Never widen it to "*".
+         */
+        configuration.setAllowedOriginPatterns(
                 Arrays.stream(allowedOrigins.split(","))
                         .map(String::trim)
                         .filter(o -> !o.isEmpty())
@@ -97,8 +107,9 @@ public class SecurityConfig {
                         // CORS preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Health / smoke test
-                        .requestMatchers("/", "/test").permitAll()
+                        // Health / smoke test. The platform's health check runs
+                        // before any token exists, so it has to be public.
+                        .requestMatchers("/", "/test", "/api/health").permitAll()
 
                         // Public: signup, OTP verify, login
                         .requestMatchers("/api/auth/**").permitAll()

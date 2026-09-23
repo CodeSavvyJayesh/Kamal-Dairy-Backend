@@ -17,3 +17,22 @@ JWT_EXPIRATION_MS=86400000
 
 CORS_ALLOWED_ORIGINS=http://localhost:5173,https://kamal-dairy-ten.vercel.app
 CONTACT_RECIPIENT=you@gmail.com
+
+# ----------------------------------------------------------------- invoicing
+# Seller identity printed on every invoice. Leave INVOICE_GSTIN blank until the
+# dairy is GST registered - the app then issues a bill of supply instead of a
+# tax invoice, which is the correct document for an unregistered seller.
+INVOICE_SELLER_NAME=Kamal Dairy
+INVOICE_TRADE_NAME=Kamal Dairy
+INVOICE_GSTIN=
+INVOICE_FSSAI=
+INVOICE_ADDRESS_LINE1=
+INVOICE_ADDRESS_LINE2=
+INVOICE_CITY=
+INVOICE_STATE=
+INVOICE_PINCODE=
+INVOICE_PHONE=
+INVOICE_EMAIL=
+INVOICE_PREFIX=KD
+INVOICE_SIGNATORY=
+INVOICE_TERMS=
