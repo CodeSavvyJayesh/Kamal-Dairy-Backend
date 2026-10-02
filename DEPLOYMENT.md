@@ -302,6 +302,13 @@ bulk sender - move to Brevo, Resend or SES before real volume.
 container has to be awake at the cut-off hour. Railway's Hobby plan does not sleep; if you are on a
 plan that does, deliveries will silently not be created. Check the logs around the cut-off hour.
 
+**Vercel build fails with `Cannot find native binding` or `Cannot find module '@rolldown/binding-linux-x64-gnu'`.** The frontend's `package-lock.json` was generated on Windows and
+only records the Windows native bindings for rolldown and lightningcss. `vercel.json` works around it
+with an `installCommand` that adds the Linux ones, pinned to the versions in the lockfile. The real
+fix is to regenerate the lockfile once: delete `node_modules` and `package-lock.json`, run
+`npm install`, commit the new lockfile, then remove `installCommand` from `vercel.json`. If you ever
+upgrade Vite before doing that, update the two version numbers in `installCommand` to match.
+
 **Deploys are slow.** The Docker build is two-stage and caches dependencies in their own layer, so
 only the first build is slow. If every build is slow, something is invalidating the cache - usually
 an edit to `pom.xml`.
