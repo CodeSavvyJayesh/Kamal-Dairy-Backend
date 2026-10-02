@@ -294,9 +294,19 @@ the exact origin the browser is using. It must include the scheme and no trailin
 **`/orders` 404s on refresh but works when clicked.** The SPA rewrite is not applying - confirm
 `vercel.json` is committed at the repo root.
 
-**No emails.** Gmail needs an **app password**, not your account password, and 2-Step Verification
-must be on. Gmail also caps around 500 messages a day and will suspend an account that looks like a
-bulk sender - move to Brevo, Resend or SES before real volume.
+**No emails, or sign-up fails with "We could not send your verification email".** Railway blocks
+outbound SMTP on the Free, Trial and Hobby plans, so Gmail SMTP times out there. The app sends through
+Brevo's HTTPS API instead whenever `BREVO_API_KEY` is set:
+
+| Variable | Value |
+|---|---|
+| `BREVO_API_KEY` | Brevo → SMTP & API → API Keys |
+| `MAIL_FROM_EMAIL` | an address verified under Brevo → Senders. Defaults to `MAIL_USERNAME` |
+| `MAIL_FROM_NAME` | optional, defaults to `Kamal Dairy` |
+
+The startup log says which transport is active: `Email transport: Brevo HTTPS API` or `Email transport: SMTP`.
+If Brevo rejects a message, the log line names the reason (bad key, unverified sender, quota).
+Without the key the app falls back to SMTP, which is what local development uses.
 
 **Subscriptions are not generating.** The generator runs on a schedule inside the app, so the
 container has to be awake at the cut-off hour. Railway's Hobby plan does not sleep; if you are on a

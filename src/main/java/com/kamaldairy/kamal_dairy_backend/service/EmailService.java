@@ -1,17 +1,14 @@
 package com.kamaldairy.kamal_dairy_backend.service;
 
+import com.kamaldairy.kamal_dairy_backend.exception.ApiException;
 import com.kamaldairy.kamal_dairy_backend.model.Order;
 import com.kamaldairy.kamal_dairy_backend.model.OrderItem;
 import com.kamaldairy.kamal_dairy_backend.model.OrderStatus;
 import com.kamaldairy.kamal_dairy_backend.util.Money;
 import jakarta.annotation.PreDestroy;
-import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -30,11 +27,12 @@ public class EmailService {
     private static final DateTimeFormatter DAY =
             DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH);
 
-    private final JavaMailSender mailSender;
+    /** Decides how mail leaves the app: Brevo's HTTPS API in production, SMTP locally. */
+    private final MailGateway mail;
 
     /**
-     * Notification mail is sent off the request thread. SMTP to Gmail can take
-     * a couple of seconds, and a slow mail server must never make a wallet
+     * Notification mail is sent off the request thread. Handing a message over
+     * can take a couple of seconds, and a slow mail service must never make a wallet
      * top-up or the nightly delivery run slow - or fail.
      */
     private final ExecutorService mailExecutor = Executors.newSingleThreadExecutor(r -> {
@@ -43,8 +41,8 @@ public class EmailService {
         return t;
     });
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    public EmailService(MailGateway mail) {
+        this.mail = mail;
     }
 
     @PreDestroy
@@ -54,13 +52,17 @@ public class EmailService {
 
     /** Sent synchronously on purpose: signup must fail visibly if the OTP cannot be delivered. */
     public void sendOtpEmail(String toEmail, String otp) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail);
-        message.setSubject("Kamal Dairy - OTP verification");
-        message.setText("Hello,\n\n" + "Your OTP for Kamal Dairy account verification is: " + otp
-                + "\n\nThis OTP is valid for 5 minutes. " + "\n\nThank You!");
-
-        mailSender.send(message);
+        try {
+            mail.send(toEmail, "Kamal Dairy - OTP verification",
+                    "Hello,\n\n" + "Your OTP for Kamal Dairy account verification is: " + otp
+                            + "\n\nThis OTP is valid for 5 minutes. " + "\n\nThank You!");
+        } catch (Exception e) {
+            // The real reason goes to the log; the customer gets something they can act on.
+            log.error("Could not send the signup code to {}: {}", toEmail, e.getMessage());
+            throw new ApiException(
+                    "We could not send your verification email just now. Please try again in a minute.",
+                    HttpStatus.SERVICE_UNAVAILABLE);
+        }
     }
 
     /** Same code as signup, sent after the request returns (resend). */
@@ -229,22 +231,7 @@ public class EmailService {
                                  byte[] attachment, String attachmentName) {
         Runnable send = () -> mailExecutor.execute(() -> {
             try {
-                if (attachment == null) {
-                    SimpleMailMessage message = new SimpleMailMessage();
-                    message.setTo(to);
-                    message.setSubject(subject);
-                    message.setText(body);
-                    mailSender.send(message);
-                } else {
-                    MimeMessage mime = mailSender.createMimeMessage();
-                    MimeMessageHelper helper = new MimeMessageHelper(mime, true, "UTF-8");
-                    helper.setTo(to);
-                    helper.setSubject(subject);
-                    helper.setText(body);
-                    helper.addAttachment(attachmentName, new ByteArrayResource(attachment),
-                            "application/pdf");
-                    mailSender.send(mime);
-                }
+                mail.send(to, subject, body, attachment, attachmentName);
             } catch (Exception e) {
                 log.warn("Could not send '{}' to {}: {}", subject, to, e.getMessage());
             }
